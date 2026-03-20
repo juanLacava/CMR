@@ -1,0 +1,20 @@
+{
+  "name": "cmr",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace apps/web",
+    "build:web": "npm run build --workspace apps/web",
+    "start:web": "npm run start --workspace apps/web",
+    "lint:web": "npm run lint --workspace apps/web",
+    "bootstrap:owner": "node scripts/bootstrap-owner.mjs",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:functions:serve": "supabase functions serve chatwoot-webhook --no-verify-jwt"
+  },
+  "devDependencies": {
+    "supabase": "^2.78.0"
+  }
+}

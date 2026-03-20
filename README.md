@@ -228,8 +228,8 @@ cp .env.example .env.local
 ```bash
 # ─── SUPABASE ────────────────────────────────────────────────────
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # Solo backend, nunca exponer al cliente
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # Login + queries del dashboard via RLS
+SUPABASE_SERVICE_ROLE_KEY=        # Solo backend, webhooks y automatizaciones
 
 # ─── WHATSAPP CLOUD API ──────────────────────────────────────────
 WHATSAPP_PHONE_NUMBER_ID=
@@ -257,6 +257,11 @@ RESEND_API_KEY=                   # https://resend.com (gratis)
 # ─── PAGOS ───────────────────────────────────────────────────────
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+
+# ─── CMR MULTIUSUARIO ────────────────────────────────────────────
+DEFAULT_TENANT_ID=                # Fallback backend para webhook/automatizaciones
+CHATWOOT_APP_URL=http://localhost:3000
+CHATWOOT_WEBHOOK_SECRET=
 ```
 
 > ⚠️ **Regla de oro:** Nunca commitear `.env.local`. Está en `.gitignore`.  
@@ -278,9 +283,40 @@ Aplicar el schema inicial:
 
 ```bash
 supabase db reset
-# Esto ejecuta todas las migrations en /packages/supabase/migrations/
-# y corre los seeds de /packages/supabase/seed/
+# Esto ejecuta todas las migrations en /supabase/migrations/
+# y corre el seed si existe en /supabase/seed.sql
 ```
+
+### 5.5 Multiusuario real
+
+La web ahora autentica con Supabase Auth y aplica permisos por `tenant_memberships`.
+
+- `apps/web` usa `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` queda reservado para backend confiable, por ejemplo `chatwoot-webhook`
+- Cada usuario entra con email/password
+- El acceso real a datos se define por membership y rol: `owner`, `admin`, `agent`, `viewer`
+
+Migraciones involucradas:
+
+- `20260320000001_init_mvp.sql`
+- `20260320000002_multiuser_auth.sql`
+
+Bootstrap minimo despues de `supabase db reset`:
+
+1. Crear un usuario desde la app o Supabase Studio.
+2. Ejecutar el bootstrap desde la raiz del repo:
+
+```bash
+npm run bootstrap:owner -- --email usuario@ejemplo.com --tenant-name "Mi negocio"
+```
+
+Opcionalmente se puede fijar slug y nombre completo:
+
+```bash
+npm run bootstrap:owner -- --email usuario@ejemplo.com --tenant-name "Mi negocio" --tenant-slug mi-negocio --full-name "Juan"
+```
+
+El script usa `SUPABASE_SERVICE_ROLE_KEY`, busca el usuario existente en Supabase Auth, crea el tenant si falta y garantiza la membership inicial con rol `owner`.
 
 ### 5.5 Configurar túnel para webhooks locales
 
@@ -387,11 +423,17 @@ Todo PR debe incluir:
 Los ADRs documentan el **por qué** de cada decisión técnica importante.  
 Ubicación: `/docs/adr/`
 
+### MVP recomendado
+
+- [MVP WhatsApp-first](./docs/mvp-whatsapp-first.md)
+- [ADR-004](./docs/adr/ADR-004-mvp-whatsapp-first-stack.md) | Chatwoot + Supabase + WhatsApp Cloud API
+
 | ID | Título | Estado |
 |---|---|---|
 | [ADR-001](./docs/adr/ADR-001-multitenant-rls.md) | Multi-tenancy con RLS sobre schema-per-tenant | ✅ Aceptado |
 | [ADR-002](./docs/adr/ADR-002-groq-over-openai-mvp.md) | Groq/LLaMA para MVP en lugar de OpenAI | ✅ Aceptado |
 | [ADR-003](./docs/adr/ADR-003-upstash-redis-streams.md) | Upstash Redis Streams como Event Bus | ✅ Aceptado |
+| [ADR-004](./docs/adr/ADR-004-mvp-whatsapp-first-stack.md) | MVP WhatsApp-first con Chatwoot + Supabase | ✅ Aceptado |
 
 ---
 

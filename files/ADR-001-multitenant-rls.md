@@ -8,7 +8,7 @@
 
 ## Contexto
 
-TurnoPro IA es un SaaS donde múltiples emprendimientos (tenants) comparten la misma infraestructura. Necesitamos garantizar aislamiento total de datos entre tenants sin incurrir en costo operativo de mantener bases de datos separadas.
+CMR es un SaaS donde múltiples emprendimientos (tenants) comparten la misma infraestructura. Necesitamos garantizar aislamiento total de datos entre tenants sin incurrir en costo operativo de mantener bases de datos separadas.
 
 ## Decisión
 

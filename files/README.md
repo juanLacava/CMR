@@ -1,4 +1,4 @@
-# TurnoPro IA
+# CMR
 
 > **Empleado IA para pequeños negocios.**  
 > CRM omnicanal con atención automatizada vía WhatsApp, Instagram, Telegram y Webchat.
@@ -20,7 +20,7 @@
 
 ## 1. Visión del producto
 
-TurnoPro IA automatiza la operación diaria de un pequeño negocio. No se vende como CRM — se vende como **un empleado digital que nunca duerme**.
+CMR automatiza la operación diaria de un pequeño negocio. No se vende como CRM — se vende como **un empleado digital que nunca duerme**.
 
 | Capacidad | Descripción |
 |---|---|
@@ -78,7 +78,7 @@ TurnoPro IA automatiza la operación diaria de un pequeño negocio. No se vende 
 ## 3. Estructura del repositorio
 
 ```
-turnopro-ia/
+CMR/
 │
 ├── apps/
 │   └── web/                  # Next.js 14 — Dashboard del emprendedor
@@ -121,7 +121,7 @@ Referencia obligatoria para todo el equipo. Usar estos términos de forma consis
 
 | Término | Definición técnica |
 |---|---|
-| **Tenant** | Un emprendimiento cliente de TurnoPro. Unidad de aislamiento en la DB. Cada tenant tiene su propio `tenant_id` UUID. |
+| **Tenant** | Un emprendimiento cliente de CMR. Unidad de aislamiento en la DB. Cada tenant tiene su propio `tenant_id` UUID. |
 | **Client** | El cliente final del emprendimiento (quien escribe por WhatsApp, etc.). No confundir con Tenant. |
 | **Conversation** | Hilo de mensajes entre un Client y el sistema, en un canal específico. Tiene estado: `active`, `pending_human`, `closed`. |
 | **Message** | Unidad atómica de comunicación dentro de una Conversation. Puede ser entrante (del client) o saliente (del bot o humano). |
@@ -138,7 +138,7 @@ Referencia obligatoria para todo el equipo. Usar estos términos de forma consis
 | Término | Definición técnica |
 |---|---|
 | **Channel Layer** | Capa de entrada. Recibe mensajes raw de WhatsApp, Telegram, Instagram, Webchat. |
-| **Ingestion Layer** | Normaliza mensajes de distintos canales al formato de evento estándar de TurnoPro. |
+| **Ingestion Layer** | Normaliza mensajes de distintos canales al formato de evento estándar de CMR. |
 | **Event Bus** | Redis Streams. Canal de comunicación asíncrono entre capas del sistema. |
 | **AI Agent** | El motor central. Compuesto por Planner, Reasoner, Memory y Tool Layer. Decide qué acción tomar ante cada mensaje. |
 | **Tool** | Función que el AI Agent puede invocar para interactuar con el sistema (leer stock, crear orden, reservar turno, etc.). |
@@ -210,8 +210,8 @@ ngrok --version
 ### 5.2 Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-org/turnopro-ia.git
-cd turnopro-ia
+git clone https://github.com/tu-org/CMR.git
+cd CMR
 npm install
 ```
 
@@ -406,4 +406,4 @@ Ubicación: `/docs/adr/`
 
 ---
 
-*TurnoPro IA — Engineering Handbook v1.0 · Referencia: `/handbook.odt`*
+*CMR — Engineering Handbook v1.0 · Referencia: `/handbook.odt`*

@@ -1,4 +1,4 @@
-project_id = "turnopro-ia"
+project_id = "cmr"
 
 [functions.chatwoot-webhook]
 verify_jwt = false

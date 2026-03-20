@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TurnoPro IA",
+  title: "CMR",
   description: "CRM WhatsApp-first para clientes, stock, pedidos y bandeja unificada."
 };
 

@@ -9,6 +9,7 @@ import type {
   ClientRow,
   DashboardData,
   DashboardStats,
+  MembershipDirectoryEntry,
   OrderRow,
   ProductRow,
   TenantMembership
@@ -29,6 +30,8 @@ const emptyData = (): DashboardData => ({
   products: [],
   orders: []
 });
+
+const membershipRoleOptions: TenantMembership["role"][] = ["owner", "admin", "agent", "viewer"];
 
 function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-AR", {
@@ -68,6 +71,10 @@ function formatErrorMessage(error: unknown) {
   }
 
   return "Unexpected error";
+}
+
+function canManageMemberships(role: TenantMembership["role"] | null | undefined) {
+  return role === "owner" || role === "admin";
 }
 
 async function loadMemberships(supabase: SupabaseClient) {
@@ -180,14 +187,31 @@ async function loadDashboard(supabase: SupabaseClient, tenantId: string) {
   };
 }
 
+async function loadMembershipDirectory(supabase: SupabaseClient, tenantId: string) {
+  const { data, error } = await supabase.rpc("list_tenant_memberships", {
+    target_tenant_id: tenantId
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as MembershipDirectoryEntry[];
+}
+
 export function DashboardClient({ chatwootAppUrl }: DashboardClientProps) {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [data, setData] = useState<DashboardData>(emptyData());
+  const [directoryEntries, setDirectoryEntries] = useState<MembershipDirectoryEntry[]>([]);
   const [loadingSession, setLoadingSession] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
+  const [loadingDirectory, setLoadingDirectory] = useState(false);
+  const [memberEmail, setMemberEmail] = useState("");
+  const [memberRole, setMemberRole] = useState<TenantMembership["role"]>("agent");
+  const [membershipActionPending, setMembershipActionPending] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -327,6 +351,52 @@ export function DashboardClient({ chatwootAppUrl }: DashboardClientProps) {
     };
   }, [selectedTenantId, supabase]);
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function syncMembershipDirectory() {
+      if (!supabase || !selectedTenantId) {
+        setDirectoryEntries([]);
+        setLoadingDirectory(false);
+        return;
+      }
+
+      const currentMembership =
+        memberships.find((membership) => membership.tenant_id === selectedTenantId) ?? null;
+
+      if (!canManageMemberships(currentMembership?.role)) {
+        setDirectoryEntries([]);
+        setLoadingDirectory(false);
+        return;
+      }
+
+      setLoadingDirectory(true);
+
+      try {
+        const nextEntries = await loadMembershipDirectory(supabase, selectedTenantId);
+
+        if (!ignore) {
+          setDirectoryEntries(nextEntries);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setDirectoryEntries([]);
+          setErrorMessage(formatErrorMessage(error));
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingDirectory(false);
+        }
+      }
+    }
+
+    void syncMembershipDirectory();
+
+    return () => {
+      ignore = true;
+    };
+  }, [memberships, selectedTenantId, supabase]);
+
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
@@ -385,10 +455,88 @@ export function DashboardClient({ chatwootAppUrl }: DashboardClientProps) {
     setData(emptyData());
     setMemberships([]);
     setSelectedTenantId(null);
+    setDirectoryEntries([]);
   }
 
   const activeMembership =
     memberships.find((membership) => membership.tenant_id === selectedTenantId) ?? null;
+  const membershipAdminEnabled = canManageMemberships(activeMembership?.role);
+
+  async function refreshMembershipViews(targetTenantId: string) {
+    if (!supabase) {
+      return;
+    }
+
+    const nextMemberships = await loadMemberships(supabase);
+    const nextActiveMembership =
+      nextMemberships.find((membership) => membership.tenant_id === targetTenantId) ?? null;
+    const nextDirectoryEntries = canManageMemberships(nextActiveMembership?.role)
+      ? await loadMembershipDirectory(supabase, targetTenantId)
+      : [];
+
+    setMemberships(nextMemberships);
+    setDirectoryEntries(nextDirectoryEntries);
+  }
+
+  async function handleMembershipSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!supabase || !selectedTenantId) {
+      return;
+    }
+
+    setMembershipActionPending(true);
+    setErrorMessage(null);
+    setNotice(null);
+
+    try {
+      const { error } = await supabase.rpc("upsert_tenant_membership_by_email", {
+        target_tenant_id: selectedTenantId,
+        target_email: memberEmail,
+        target_role: memberRole
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshMembershipViews(selectedTenantId);
+      setMemberEmail("");
+      setMemberRole("agent");
+      setNotice("Membership actualizada.");
+    } catch (error) {
+      setErrorMessage(formatErrorMessage(error));
+    } finally {
+      setMembershipActionPending(false);
+    }
+  }
+
+  async function handleMembershipDelete(entry: MembershipDirectoryEntry) {
+    if (!supabase || !selectedTenantId) {
+      return;
+    }
+
+    setMembershipActionPending(true);
+    setErrorMessage(null);
+    setNotice(null);
+
+    try {
+      const { error } = await supabase.rpc("remove_tenant_membership", {
+        target_membership_id: entry.membership_id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshMembershipViews(selectedTenantId);
+      setNotice(`Membership removida para ${entry.email}.`);
+    } catch (error) {
+      setErrorMessage(formatErrorMessage(error));
+    } finally {
+      setMembershipActionPending(false);
+    }
+  }
 
   if (loadingSession || !supabase) {
     return (
@@ -491,15 +639,17 @@ export function DashboardClient({ chatwootAppUrl }: DashboardClientProps) {
             <a className="button button-primary" href={chatwootAppUrl}>
               Abrir bandeja
             </a>
-            <button className="button button-secondary" onClick={handleSignOut} type="button">
-              Cerrar sesión
-            </button>
           </div>
         </div>
-        <p>
-          Sesión activa: <strong>{session.user.email}</strong>
-          {activeMembership ? ` · Rol ${activeMembership.role}` : ""}
-        </p>
+        <div className="session-row">
+          <p>
+            Sesión activa: <strong>{session.user.email}</strong>
+            {activeMembership ? ` · Rol ${activeMembership.role}` : ""}
+          </p>
+          <button className="button button-secondary" onClick={handleSignOut} type="button">
+            Sign out
+          </button>
+        </div>
         <p className="muted">
           {activeMembership?.tenant
             ? `Tenant activo: ${activeMembership.tenant.name} (${activeMembership.tenant.slug})`
@@ -535,6 +685,93 @@ export function DashboardClient({ chatwootAppUrl }: DashboardClientProps) {
             ))
           )}
         </div>
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <div>
+            <h2 className="section-title">Equipo del tenant</h2>
+            <p className="section-copy">
+              {membershipAdminEnabled
+                ? "Owners y admins pueden asignar accesos por email sobre el tenant activo."
+                : "Solo owners y admins pueden administrar memberships desde esta vista."}
+            </p>
+          </div>
+          {activeMembership ? <span className="chip">Tu rol: {activeMembership.role}</span> : null}
+        </div>
+
+        {membershipAdminEnabled ? (
+          <>
+            <form className="member-form" onSubmit={handleMembershipSubmit}>
+              <label className="field">
+                <span>Email del usuario</span>
+                <input
+                  autoComplete="email"
+                  onChange={(event) => setMemberEmail(event.target.value)}
+                  placeholder="persona@negocio.com"
+                  type="email"
+                  value={memberEmail}
+                />
+              </label>
+
+              <label className="field">
+                <span>Rol</span>
+                <select
+                  onChange={(event) => setMemberRole(event.target.value as TenantMembership["role"])}
+                  value={memberRole}
+                >
+                  {membershipRoleOptions.map((roleOption) => (
+                    <option key={roleOption} value={roleOption}>
+                      {roleOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                className="button button-primary"
+                disabled={membershipActionPending || memberEmail.trim().length === 0}
+                type="submit"
+              >
+                {membershipActionPending ? "Guardando..." : "Agregar o actualizar"}
+              </button>
+            </form>
+
+            <div className="list member-list">
+              {loadingDirectory ? (
+                <p className="empty">Cargando miembros del tenant...</p>
+              ) : directoryEntries.length === 0 ? (
+                <p className="empty">Todavía no hay memberships visibles para este tenant.</p>
+              ) : (
+                directoryEntries.map((entry) => (
+                  <div className="row member-row" key={entry.membership_id}>
+                    <div>
+                      <p className="row-title">{entry.full_name ?? "Usuario sin nombre"}</p>
+                      <p className="row-copy">
+                        {entry.email} · Alta {formatDate(entry.created_at)}
+                      </p>
+                    </div>
+                    <div className="member-actions">
+                      <span className="chip">{entry.role}</span>
+                      <button
+                        className="button button-secondary"
+                        disabled={membershipActionPending}
+                        onClick={() => void handleMembershipDelete(entry)}
+                        type="button"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="empty">
+            Cambiá al tenant donde seas owner o admin para gestionar accesos del equipo.
+          </p>
+        )}
       </section>
 
       <section className="metrics" id="resumen">

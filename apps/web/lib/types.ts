@@ -52,3 +52,12 @@ export type TenantMembership = {
     slug: string;
   } | null;
 };
+
+export type MembershipDirectoryEntry = {
+  membership_id: string;
+  user_id: string;
+  role: TenantMembership["role"];
+  created_at: string;
+  full_name: string | null;
+  email: string;
+};

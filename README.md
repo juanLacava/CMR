@@ -318,6 +318,14 @@ npm run bootstrap:owner -- --email usuario@ejemplo.com --tenant-name "Mi negocio
 
 El script usa `SUPABASE_SERVICE_ROLE_KEY`, busca el usuario existente en Supabase Auth, crea el tenant si falta y garantiza la membership inicial con rol `owner`.
 
+Seed demo opcional para poblar el dashboard local:
+
+```bash
+npm run seed:demo -- --tenant-slug mi-negocio
+```
+
+Esto carga clientes, productos, conversaciones y pedidos de ejemplo para el tenant indicado.
+
 ### 5.5 Configurar túnel para webhooks locales
 
 WhatsApp, Instagram y Telegram necesitan una URL pública para enviar webhooks. En desarrollo local usamos ngrok:

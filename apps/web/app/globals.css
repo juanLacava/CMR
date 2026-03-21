@@ -101,6 +101,14 @@ a {
   flex-wrap: wrap;
 }
 
+.session-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -111,6 +119,11 @@ a {
   border: 1px solid transparent;
   font-weight: 700;
   cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .button-primary {
@@ -312,7 +325,18 @@ a {
   font: inherit;
 }
 
-.field input:focus {
+.field select {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--text);
+  font: inherit;
+}
+
+.field input:focus,
+.field select:focus {
   outline: 2px solid rgba(15, 118, 110, 0.18);
   border-color: rgba(15, 118, 110, 0.36);
 }
@@ -336,6 +360,36 @@ a {
   display: grid;
   gap: 18px;
   margin: 18px 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.member-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(180px, 0.8fr) auto;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.member-list {
+  margin-top: 8px;
+}
+
+.member-row {
+  align-items: center;
+}
+
+.member-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .tenant-list {
@@ -399,5 +453,9 @@ a {
   .row,
   .hero-top {
     flex-direction: column;
+  }
+
+  .member-form {
+    grid-template-columns: 1fr;
   }
 }

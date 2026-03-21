@@ -73,6 +73,52 @@ npx tsc -p apps/web/tsconfig.json --noEmit
 npm --prefix apps/web run build
 ```
 
+### 6. Gestión de equipo por tenant
+
+Se agregó una tercera migración:
+
+- `supabase/migrations/20260321000003_membership_management.sql`
+
+Esa migración agrega:
+
+- RPC `list_tenant_memberships`
+- RPC `upsert_tenant_membership_by_email`
+- RPC `remove_tenant_membership`
+- validaciones para que solo `owner` y `admin` gestionen miembros
+- restricción para que solo `owner` pueda promover o remover a otro `owner`
+- protección para no dejar un tenant sin ningún `owner`
+
+Además, el dashboard ahora:
+
+- lista el equipo del tenant activo
+- permite agregar o actualizar memberships por email
+- permite remover memberships desde la UI
+- oculta la administración de equipo a roles `agent` y `viewer`
+
+### 7. Seed demo para desarrollo local
+
+Se agregó un script de demo:
+
+- `scripts/seed-demo-data.mjs`
+
+Disponible desde:
+
+```bash
+npm run seed:demo -- --tenant-slug mi-negocio
+```
+
+El script:
+
+- upsertea clientes demo
+- upsertea productos demo
+- recrea conversaciones y mensajes demo
+- recrea pedidos demo con items
+- deja el dashboard con datos visibles para validar métricas y vistas
+
+### 8. Ajustes finales de UI
+
+Se agregó un botón visible de `Sign out` dentro del bloque de sesión activa del dashboard para hacer más claro el cierre de sesión.
+
 ## Problemas resueltos
 
 ### Supabase local
@@ -98,7 +144,18 @@ Hoy el proyecto:
 - muestra pantalla de autenticación
 - permite registro/login
 - permite bootstrapear el primer `owner` por CLI
-- quedó listo para asignar memberships y operar por tenant
+- permite gestionar memberships desde la UI
+- permite cerrar sesión desde el dashboard
+- puede cargarse con datos demo para validar vistas
+
+## Estado validado localmente
+
+Se dejó creado y validado este setup local:
+
+- usuario owner: `eduardolacava@yahoo.com.ar`
+- tenant: `Mi negocio`
+- slug: `mi-negocio`
+- datos demo cargados: 3 clientes, 3 productos, 2 conversaciones, 2 pedidos
 
 ## Lo que falta para usarlo
 
@@ -146,8 +203,7 @@ npm run dev:web
 
 ## Próximos pasos recomendados
 
-1. Ejecutar el bootstrap del primer `owner` y validar acceso real al dashboard.
-2. Probar que el usuario vea su tenant en el dashboard.
-3. Cargar datos reales de prueba en `clients`, `products`, `orders`.
-4. Conectar Chatwoot al webhook.
-5. Agregar gestión de usuarios y memberships desde la UI.
+1. Probar el flujo completo de alta/baja/cambio de rol desde la UI con un segundo usuario.
+2. Conectar Chatwoot al webhook.
+3. Reemplazar datos demo por datos reales de prueba en `clients`, `products`, `orders`.
+4. Si se resetea la DB, volver a correr `npm run bootstrap:owner` y `npm run seed:demo -- --tenant-slug mi-negocio`.

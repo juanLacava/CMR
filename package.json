@@ -11,6 +11,7 @@
     "lint:web": "npm run lint --workspace apps/web",
     "bootstrap:owner": "node scripts/bootstrap-owner.mjs",
     "seed:demo": "node scripts/seed-demo-data.mjs",
+    "test:chatwoot-flow": "node scripts/test-chatwoot-flow.mjs",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:functions:serve": "supabase functions serve chatwoot-webhook --no-verify-jwt"

@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
+import { Instrument_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+
+const bodyFont = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-body"
+});
+
+const displayFont = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display"
+});
 
 export const metadata: Metadata = {
   title: "CMR",
-  description: "CRM WhatsApp-first para clientes, stock, pedidos y bandeja unificada."
+  description: "CRM centrado en WhatsApp para clientes, stock, pedidos y bandeja unificada."
 };
 
 export default function RootLayout({
@@ -13,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body className={`${bodyFont.variable} ${displayFont.variable}`}>{children}</body>
     </html>
   );
 }

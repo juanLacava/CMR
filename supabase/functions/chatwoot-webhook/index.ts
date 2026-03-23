@@ -298,7 +298,7 @@ Deno.serve(async (request) => {
   try {
     const supabaseUrl = getRequiredEnv("SUPABASE_URL");
     const supabaseServiceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-    const tenantId = getRequiredEnv("DEFAULT_TENANT_ID");
+    const tenantId = request.headers.get("x-cmr-tenant-id") ?? getRequiredEnv("DEFAULT_TENANT_ID");
     const webhookSecret = Deno.env.get("CHATWOOT_WEBHOOK_SECRET");
     const webhookToken = request.headers.get("x-chatwoot-token");
 

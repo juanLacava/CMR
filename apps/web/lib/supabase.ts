@@ -22,6 +22,7 @@ export function createBrowserSupabaseClient() {
 
   browserClient = createClient(url, anonKey, {
     auth: {
+      storageKey: "cmr-web-auth",
       autoRefreshToken: true,
       persistSession: true
     }
